@@ -1,0 +1,35 @@
+<? if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) die();?>
+LANGUAGE_ID - strtoupper(LANGUAGE_ID);
+$APPLICATION->ShowTitle();
+<H1>$APPLICATION->ShowTitle(false)
+<meta>$APPLICATION->ShowHead()
+<link rel="icon" type="image/vnd.microsoft.icon" href="<?= SITE_TEMPLATE_PATH . '/img/' ?>favicon.ico">
+ <link rel="shortcut icon" href="<?= SITE_TEMPLATE_PATH . '/img/' ?>favicon.ico">
+$APPLICATION->ShowPanel()
+CFile::ResizeImageGet(bdFile,['width'=>20,'height'=>30]) => [src,width,height]
+CFile::GetFileArray(FILE_ID,$upload_dir = false) =>[]
+$arResult['DISPLAY_PROPERTIES']['DOCS']
+\Bitrix\Main\Application::getDocumentRoot() - real path
+$ass=\Bitrix\Main\Page\Asset::getInstance();
+$ass->addCss();$ass->addJs();
+$APPLICATION->SetAdditionalCSS();$APPLICATION->AddHeadScript();
+\Bitrix\Main\Localization\Loc::loadMessages(FILE);
+\Bitrix\Main\Localization\Loc::getMessage('ID')
+IncludeTemplateLangFile(FILE);
+GetMessage('ID');
+$APPLICATION->GetCurDir() == '/'
+breadcrumb  .section/свойства раздела
+$APPLICATION->SetPageProperty("NOT_SHOW_NAV_CHAIN", "Y");
+$APPLICATION->AddChainItem("Форум &quot;Отзывы&quot;", "/ru/forum/list.php?FID=3");
+$APPLICATION->ShowNavChain();
+Управление структурой->Настройки для сайтов, создать свойство для страниц 'Не показывать навигационную цепочку' с кодом not_show_nav_chain
+для этой страницы или раздела нужно установить значение данного свойства равным Y
+
+Добавление пользователя:
++новая группа
++уровень доступа управление структурой/модуль на чтение и изменение файловой системой и меню
++добавить группе права главный модуль/контент-редакторы и управление структурой/созданный уровень доступа
++задать права в менеджере файлов для группы
++задать права в нужном инфоблоке для группы
++приписать к группе пользователя
+*всё!
