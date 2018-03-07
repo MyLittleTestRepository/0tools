@@ -9,32 +9,37 @@ DBNAME=html1
 GITREPO=/var/www/html1
 DUMP=$GITREPO/local
 NEW=$DUMP/$DBNAME.sql
-TMP=$DUMP/$DBNAME.tmp
-OLD=$NEW.old
+#TMP=$DUMP/$DBNAME.tmp
+#OLD=$NEW.old
 
 DIR=$(pwd)
 
 cd $GITREPO
 
-if [ -f "$TMP" ]; then
-    rm $TMP
+if [ -f "$NEW" ]; then
+    rm $NEW
 fi
+#if [ -f "$TMP" ]; then
+#    rm $TMP
+#fi
 
 #-p$DBPASS
-mysqldump -h$DBHOST -u$DBUSER $DBNAME --skip-dump-date --single-transaction --no-data > $TMP
+#mysqldump -h$DBHOST -u$DBUSER $DBNAME --skip-dump-date --single-transaction --no-data > $TMP
+mysqldump -h$DBHOST -u$DBUSER $DBNAME --skip-dump-date --single-transaction --no-data > $NEW
 
-if cmp -s $NEW $TMP; then
-    echo "Database not changed"
-    rm $TMP
-else
-    echo "changes detected in database schema"
-    if [ -f "$NEW" ]; then
-        mv $NEW $OLD
-    fi
-    mv $TMP $NEW
+
+#if cmp -s $NEW $TMP; then
+#    echo "Database not changed"
+#    rm $TMP
+#else
+#    echo "changes detected in database schema"
+#    if [ -f "$NEW" ]; then
+#        mv $NEW $OLD
+#    fi
+#    mv $TMP $NEW
     git add $NEW
     echo "schema committed"
-fi
+#fi
 
 #fix access
 find . -type f|xargs chmod 777
