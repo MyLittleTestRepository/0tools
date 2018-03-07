@@ -1,0 +1,39 @@
+#!/bin/sh -e
+# -e means exit if any command fails
+DBHOST=localhost
+DBUSER=root
+DBPASS='' # do this in a more secure fashion
+DBNAME=html1
+
+GITREPO=/var/www/html1
+DUMP=$GITREPO/local
+NEW=$DUMP/$DBNAME.sql
+TMP=$DUMP/$DBNAME.tmp
+OLD=$NEW.old
+
+DIR=$(pwd)
+
+cd $GITREPO
+
+mysqldump -h $DBHOST -u $DBUSER -p$DBPASS $DBNAME --skip-dump-date --single-transaction --no-data > $TMP
+
+if cmp -s $OLD $NEW; then
+    echo "Database not changed"
+    rm TMP
+else
+    echo "changes detected in database schema"
+    if [ -f "$NEW" ]; then
+        mv $NEW $OLD
+    fi
+    mv $TMP $NEW
+    git add $NEW
+    echo "schema committed"
+fi
+
+#fix access
+find . -type f|xargs chmod 777
+find . -type d|xargs chmod 777
+find . -type f|xargs chown www-data:www-data
+find . -type d|xargs chown www-data:www-data
+
+cd $DIR
