@@ -1,50 +1,34 @@
-su -
+#su -
 #!/bin/sh -e
 # -e means exit if any command fails
-DBHOST=localhost
-DBUSER=root
-#DBPASS=pass # do this in a more secure fashion
-DBNAME=html1
+SITE=exam2tier0
 
-GITREPO=/var/www/html1
-DUMP=$GITREPO/local
-NEW=$DUMP/$DBNAME.sql
-#TMP=$DUMP/$DBNAME.tmp
-#OLD=$NEW.old
+ROOT=/var/www/$SITE
+DUMPDIR=local
+
+DBHOST=127.0.0.1
+DBPORT=3306
+DBUSER=root
+DBNAME=$SITE
+
+DUMPFILE=$DBNAME.sql
 
 DIR=$(pwd)
 
-cd $GITREPO
+cd $ROOT
 
-if [ -f "$NEW" ]; then
-    rm $NEW
+if [ -f "$ROOT/$DUMPDIR/$DUMPFILE" ]; then
+    rm $ROOT/$DUMPDIR/$DUMPFILE
 fi
-#if [ -f "$TMP" ]; then
-#    rm $TMP
-#fi
 
-#-p$DBPASS
-#mysqldump -h$DBHOST -u$DBUSER $DBNAME --skip-dump-date --single-transaction --no-data > $TMP
-mysqldump -h$DBHOST -u$DBUSER $DBNAME --skip-dump-date --single-transaction --no-data > $NEW
+mysqldump -h$DBHOST -P$DBPORT -u$DBUSER --skip-dump-date --single-transaction $DBNAME > $ROOT/$DUMPDIR/$DUMPFILE
+echo "db dump create"
 
-
-#if cmp -s $NEW $TMP; then
-#    echo "Database not changed"
-#    rm $TMP
-#else
-#    echo "changes detected in database schema"
-#    if [ -f "$NEW" ]; then
-#        mv $NEW $OLD
-#    fi
-#    mv $TMP $NEW
-    git add $NEW
-    echo "schema committed"
-#fi
-
-#fix access
+echo "fix access"
 find . -type f|xargs chmod 777
 find . -type d|xargs chmod 777
 find . -type f|xargs chown www-data:www-data
 find . -type d|xargs chown www-data:www-data
 
+git add $ROOT/$DUMPDIR/$DUMPFILE
 cd $DIR
