@@ -1,0 +1,146 @@
+Кэширование:
+
+Ядро грузит компонент в таком порядке:
+При формировании каталога ищет .description.php, разбирает метаданные, выводит каталоге компонентов
+При подключении компонента/открытии меню настроек компонента ищет .parameters.php, отрабатывает
+После $arCurrentValues передается в component.php как $arParams
+Отрабатывает component.php до секции кэша
+Если есть кэш - он выводится, из него десериализуется $arResult, и управление передается в конец component.php, после секции кэша
+Если кэша нет - штатно отрабатывает секция кэша
+В секции кэша ядро включает html-кэш, весь вывод (echo например) падает в буфер
+Отрабатывает наш код компонента, запрашивающий данные из БД
+На основе этих данных кодом формируем $arResult удобной нам структуры
+Далее помечаем часть корневых веток $arResult: $this->setResultCacheKeys(['IBLOCK_ID','CNT'])
+Далее в конце секции подключаем шаблон $this->includeComponentTemplate()
+При подключении шаблона происходит много интересного:
+-отрабатывает result_modifier.php, если есть, дополнительно преобразующий $arResult 
+-отрабатывает шаблон, найденный в $arParams, при этом ему доступен полный массив $arResult
+-вывод шаблона, html со вшитыми значениями из $arResult, падает в буфер
+-если мы ничего не передали в setResultCacheKeys, ядро сериализует весь $arResult в буфер
+-если мы передали в setResultCacheKeys пустой массив, ядро не сериализует $arResult
+-если мы передали в setResultCacheKeys массив с ключами, ядро сериализует в буфер только переданные ветки $arResult
+-кеширование завершается, буфер сбрасывается на диск
+-отрабатывает component_epilog.php, если есть
+Далее управление переходит в конец component.php, после секции кэша
+
+
+Рассмотрим внимательнее включение кэша
+$this->startResultCache($cacheTime,$id,$path)
+
+Если $cacheTime === false
+$cacheTime = intval($this->arParams["CACHE_TIME"]);
+т.е. можно не задавать, берется из arParams
+
+Как генерируется дефолтный cacheID:
+$cacheID='SITE_ID|LANGUAGE_ID|SITE_TEMPLATE_NAME|#component_namespace#:#component_name#|#component_template_name#|';
+Пример: s1|ru|furniture_pale-blue|custom:list.vacancy|.default|
+Далее добавляется каждый корневой элемент $arParams, начинающийся не на ~
+Пример: s1|ru|furniture_pale-blue|custom:list.vacancy|.default|,CACHE_TIME=s:8:"36000000";,CACHE_TYPE=s:1:"A";,IBLOCK_ID=i:4;,IBLOCK_TYPE=s:9:"vacancies";
+Далее добавляется смещение временной зоны, если оно не нулевое
+Далее добавляется переданный нами $id, если он не нулевой
+т.е. если нет зависимости по данным, можно не передавать ничего
+А если передать - оно просто добавляется к $cacheID
+Так что достаточно передать только наши зависимости по данным
+
+$path по умолчанию
+$path = "/".SITE_ID.$relativePath."/".substr(md5($scriptName), 0, 3);
+где $scriptName - путь к текущей страничке от корня сайта, например '/test.php'
+пример: /s1/custom/list.vacancy/bf6
+
+Таким образом кэш зависит от:
+-SITE_ID
+-LANGUAGE_ID
+-SITE_TEMPLATE_NAME
+-#component_namespace#
+-#component_name#
+-#component_template_name#|
+-параметров компонента
+-переданных нами зависимостей
+-адреса странички от корня сайта
+
+При любом изменении любого из этих элементов генерируется новый файл кэша.
+Таким образом для каждого набора этих элементов генерируется свой файл кэша.
+Если он уже был сгенерирован ранее - он просто подгружается с диска.
+Это обеспечивает высокую вариабельность кеша - для каждого уникального набора элементов создается свой файл кэша одного и того же компонента
+Но если какой-то из этих элементов меняется произвольно - кэш забивается ненужными, холодными данными. И если такие изменения идут часто - это ведет к быстрому исчерпанию места на диске, и отказу сервера.
+Так что за передаваемыми зависимостями нужно следить. Если они меняются произвольно, т.е. значений элемента много, и вероятность выпадения каждого низка, для таких данных кэш не нужен, он не будет работать, эти зависимости следует убрать из $cacheID, и реализовать их вывод иначе, поверх кеша
+
+Тонкости кэширования:
+-кэширование работает только для компонентов, конечная страничка сшивается из кешей компонентов на каждом хите
+-полностраничного кэша нет
+-кэш не может быть вложенным, но можно кешировать части компонента последовательно, и выводить одну в другой через ShowViewContent
+
+Структура компонента:
+В каждом php в начале проверяем пролог:
+<? if (!defined('B_PROLOG_INCLUDED') || B_PROLOG_INCLUDED !== true)
+	die();
+
+
+.parameters.php:
+на входе ничего
+внутри $arCurrentValues - результат ввода пользователя
+на выходе $arComponentParameters
+
+//проверяем существование модулей
+if (!CModule::IncludeModule('iblock'))
+	return;
+
+//формируем списки элементов из БД
+$arIblockTypes = CIBlockParameters::GetIBlockTypes();
+$arIblockIds = [];
+if (isset($arCurrentValues['IBLOCK_TYPE']))
+{
+	$DbRes = CIBlock::GetList('', ["TYPE" => $arCurrentValues['IBLOCK_TYPE'], 'ACTIVE' => 'Y']);
+	while ($iblock = $DbRes->Fetch())
+	{
+		$arIblockIds[$iblock['ID']] = '[' . $iblock['ID'] . '] ' . $iblock['NAME'];
+	}
+}
+
+$arComponentParameters = ['GROUPS'     => ["BASE" => ["NAME" => GetMessage('BASE'),
+                                                      "SORT" => "10",]],
+                          'PARAMETERS' => ["IBLOCK_TYPE" => ["PARENT"  => "BASE",
+                                                             "NAME"    => GetMessage('IBLOCK_TYPE'),
+                                                             "TYPE"    => "LIST",
+                                                             "REFRESH" => "Y",
+                                                             "VALUES"  => $arIblockTypes,],
+                                           "IBLOCK_ID"   => ["PARENT" => "BASE",
+                                                             "NAME"   => GetMessage('IBLOCK_ID'),
+                                                             "TYPE"   => "LIST",
+                                                             "VALUES" => $arIblockIds,],
+                                           "CACHE_TIME"  => ["DEFAULT" => 36000000]]
+
+];
+?>
+
+на входе $arParams
+~проверка существования ключевых параметров
+~установка дефолтных значений для пустых параметров
+~проверка формата параметров: trim, int_val, etc
+
+if ($this->startResultCache())
+{
+	//проверка существования модулей, выдача ошибок
+		if (!CModule::IncludeModule("iblock"))
+	{
+		$this->abortResultCache();
+		ShowError('Модуль инфоблоков не найден');
+		return;
+	}
+
+	if (!$arParams["IBLOCK_ID"])
+	{
+		//если параметр не задан - выводим пустую страницу
+		$this->abortResultCache();
+		return;
+	}
+
+	~запросы к БД
+	~формирование $arResult
+	
+	//ограничение кэша
+	$this->setResultCacheKeys(array("LAST_ITEM_IBLOCK_ID",));
+	
+	//подключение шаблона
+	$this->includeComponentTemplate();
+}
