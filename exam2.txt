@@ -70,6 +70,8 @@ $path = "/".SITE_ID.$relativePath."/".substr(md5($scriptName), 0, 3);
 -полностраничного кэша нет
 -кэш не может быть вложенным, но можно кешировать части компонента последовательно, и выводить одну в другой через ShowViewContent
 
+**********************************************************************************************
+
 Структура компонента:
 В каждом php в начале проверяем пролог:
 <? if (!defined('B_PROLOG_INCLUDED') || B_PROLOG_INCLUDED !== true)
@@ -144,3 +146,243 @@ if ($this->startResultCache())
 	//подключение шаблона
 	$this->includeComponentTemplate();
 }
+
+**********************************************************************************************
+
+отладчик для экзамена:
+
+init.php:
+function mydebug(&$string, $die = false, $fname = '')
+{
+	file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/debug_' . $fname . '.txt',
+	                  date('H:i:s') . PHP_EOL . mydump($string));
+	if ($die)
+		die();
+}
+Для дампа массивов, когда их нельзя вывести на экран, например в обработчиках событий
+**********************************************************************************************
+//в шаблоне компонента параметры отображены в массив
+.parameters.php
+$arTemplateParameters == $arComponentParameters['PARAMETERS']
+**********************************************************************************************
+CDBResult::SelectedRowsCount() - количество элементов в выборке
+**********************************************************************************************
+//отмена кэширования при ошибках
+if (!CModule::IncludeModule("iblock"))
+	{
+		$this->abortResultCache();
+		ShowError(GetMessage('MODULE_NOT_FOUND'));
+		return;
+	}
+**********************************************************************************************
+Логика в фильтре:
+['LOGIC'=>'AND',
+ ['PROPERTY_1' => $other_id],
+ ['!PROPERTY_1' => $my_id]
+]
+**********************************************************************************************
+//пункт в меню компонента
+if ($APPLICATION->GetShowIncludeAreas())
+	$this->AddIncludeAreaIcons([
+	["TITLE"          => GetMessage("IB_MENU"),
+	 "URL"            => '/bitrix/admin/iblock_element_admin.php?IBLOCK_ID='.$arParams['NEWS_IBLOCK_ID'].'&type='.$arResult['IBLOCK_TYPE'],
+	 "IN_PARAMS_MENU" => true, //флажки задают размещение
+	 "IN_MENU"        => false]
+	                            ]);
+
+if ($APPLICATION->GetShowIncludeAreas())
+	$this->AddIncludeAreaIcons([["TITLE"          => GetMessage("NEWS_LIST"),
+	                             "URL"            => '/bitrix/admin/'
+	                                                 . CIBlock::GetAdminElementListLink($arParams['NEWS_IBLOCK_ID']),
+	                             "IN_PARAMS_MENU" => true //показать в контекстном меню
+	                             "IN_MENU"        => false, //показать в подменю компонента
+	                            ]]);
+**********************************************************************************************
+//mysql help
+mysql -uroot -ppass
+show databases;
+use db_name;
+show tables from exam2tier1_demoAll;
+show columns from b_iblock_element;
+select id,show_counter from b_iblock_element where iblock_id=2 and id=34;
+update b_iblock_element set show_counter=100 where iblock_id=2 and id=34;
+**********************************************************************************************
+//exeption
+$GLOBALS['APPLICATION']->ThrowException('text');
+**********************************************************************************************
+//журнал событий
+CEventLog::Log('INFO', 'событие', 'main', 'обьект', 'описание');
+**********************************************************************************************
+//путь
+$_SERVER['REQUEST_URI']
+/products/2/20/
+**********************************************************************************************
+//отладка запросов к бд
+//while ($tmp[]=$Res->Fetch());mydebug($tmp,1);
+**********************************************************************************************
+//автозамена шаблона url
+$Res=IBlockElement::GetList(*******); //get result
+$Res->SetUrlTemplates($arParams['URL_TEMPLATE']); //set template
+while($Res->GetNext()) //edit url
+
+//ручная замена (в случае если нет доступа к телу компонента, нельзя вставить код между запросом к бд и выборкой)
+$url = '/aam/new/?PARAM1=#PARAM1#&PARAM2=#PARAM2#';
+$arRepl=['#PARAM1#'=>123,
+         '#PARAM2#'=>456];
+$url=str_replace(array_keys($arRepl),$arRepl,$url);
+**********************************************************************************************
+//уникальный идентификатор, чтобы эрмитаж корректно обрабатывал дубли новостей
+$id=$news_id+$count++;
+$this->AddEditAction($id, $arResult[$news_id]['EDIT_LINK'],
+                                         CIBlock::GetArrayByID($arResult[$news_id]["IBLOCK_ID"], "ELEMENT_EDIT"));
+$this->AddDeleteAction($id, $arResult[$news_id]['DELETE_LINK'],
+                                           CIBlock::GetArrayByID($arResult[$news_id]["IBLOCK_ID"], "ELEMENT_DELETE"),
+                                           array("CONFIRM" => GetMessage('CT_BNL_ELEMENT_DELETE_CONFIRM')));
+***
+<li id="<?=$this->GetEditAreaId($id);?>">
+**********************************************************************************************
+//ссылка на список элементов в админке
+'/bitrix/admin/'.CIBlock::GetAdminElementListLink('iblock_id')
+
+**********************************************************************************************
+//пагинация
+
+.parameters.php
+//задаем размер страницы
+$arComponentParameters = array(
+	"PARAMETERS" => array(
+		"PAGE_SIZE" => array(
+			'PARENT' => 'BASE',
+			"NAME" => GetMessage("PAGE_SIZE"),
+			"TYPE" => "STRING",
+			'DEFAULT' => '1',
+		),
+	),
+);
+
+component.php
+if ($arParams['PAGE_SIZE'] > 0) //если пагинация нужна
+{
+	//выключаем запоминание последней страницы в сессии
+	CPageOption::SetOptionString("main", "nav_page_in_session", "N");
+	//указываем размер страницы
+	$arNavParams = array("nPageSize"          => $arParams["PAGE_SIZE"],
+	                     "bDescPageNumbering" => false,
+	                     "bShowAll"           => false);
+	//получаем номер текущей страницы
+	$arNavigation = CDBResult::GetNavParams($arNavParams);
+	//формируем айди кэша
+	$cacheID = array_merge($arNavigation, $arNavParams);
+}
+else //иначе формируем пустые переменные
+{
+	$arNavParams = false;
+	$arNavigation = '';
+	$cacheID = '';
+}
+
+if ($this->startResultCache(false, $cacheID))
+{
+	//запрашиваем ограниченный список
+	$Res = CIBlockElement::GetList(false,$filter,false,$arNavParams,$select);
+
+	if ($arParams['PAGE_SIZE'] > 0)
+	{
+		//ограничиваем выдачу
+		$Res->NavStart($arParams['PAGE_SIZE']);
+		//сохраняем пагинатор
+		$arResult["NAV_STRING"] = $Res->GetPageNavStringEx($navComponentObject, 'Страницы');
+	}
+
+	$this->includeComponentTemplate();
+}
+
+template.php
+//выводим пагинатор
+<br /><?=$arResult["NAV_STRING"]?>
+
+основные моменты:
+1 - формат вызова кэша $this->startResultCache(false, $cacheID), легко перепутать, много проблем
+
+**********************************************************************************************
+//сброс кэша при изменении инфоблока
+
+Добавить
+$GLOBALS['CACHE_MANAGER']->RegisterTag("iblock_id_" . "id инфоблока");
+в тело кешируемой части компонента, у которого нужно сбросить кэш
+При изменении инфоблока автоматически будет сбрасываться кэш
+
+управляемый кеш инфоблоков очищается только при вызове Update. При изменении, например, свойств с помощью SetPropertyValueCode очистки не произойдет. Делаем вручную после изменения
+
+ручной сброс
+$CACHE_MANAGER->ClearByTag("iblock_id_7");
+или
+CIBlock::clearIblockTagCache( 7 );
+
+отключить привязку
+CIBlock::DisableTagCache($iblock_id)
+
+*******************************************************************************************
+//комплексный компонент, маршрутизация
+1 - добавить алиасы для нечпу, и шаблон пути для чпу
+"PARAMETERS" => array(
+		"VARIABLE_ALIASES" => Array(
+			"SECTION_ID" => Array("NAME" => GetMessage("SECTION_ID_DESC")),
+			"ELEMENT_ID" => Array("NAME" => GetMessage("ELEMENT_ID_DESC")),
+			//Добавили переменные
+			"PARAM1" => Array("NAME" => GetMessage("PARAM1")),
+			"PARAM2" => Array("NAME" => GetMessage("PARAM2")),
+),
+		"SEF_MODE" => Array(
+			"sections_top" => array(
+				"NAME" => GetMessage("SECTIONS_TOP_PAGE"),
+				"DEFAULT" => "",
+				"VARIABLES" => array(),
+			),
+			"section" => array(
+				"NAME" => GetMessage("SECTION_PAGE"),
+				"DEFAULT" => "#SECTION_ID#/",
+				"VARIABLES" => array("SECTION_ID"),
+			),
+			"detail" => array(
+				"NAME" => GetMessage("DETAIL_PAGE"),
+				"DEFAULT" => "#SECTION_ID#/#ELEMENT_ID#/",
+				"VARIABLES" => array("ELEMENT_ID", "SECTION_ID"),
+			),
+				
+			//добавили новую страницу
+			"exampage" => array(
+					"NAME" => GetMessage("EXAM_PAGE"),
+					'DEFAULT' => 'exam/new/#PARAM1#/?PARAM2=#PARAM2#',
+					'VARIABLES' => 'PARAM1, PARAM2',
+			),
+
+2 - чпу разберется сам, а для нечпу добавим условия выбора страницы
+	elseif(isset($arVariables["PARAM1"]) && strlen($arVariables["PARAM1"]) > 0)
+		$componentPage = "exampage";
+И сам шаблон пути в нечпу режиме
+	$arResult = array(
+		"URL_TEMPLATES" => Array(
+			"section" => htmlspecialcharsbx($APPLICATION->GetCurPage())."?".$arVariableAliases["SECTION_ID"]."=#SECTION_ID#",
+			"detail" => htmlspecialcharsbx($APPLICATION->GetCurPage())."?".$arVariableAliases["SECTION_ID"]."=#SECTION_ID#"."&".$arVariableAliases["ELEMENT_ID"]."=#ELEMENT_ID#",
+			"exampage" => htmlspecialcharsbx($APPLICATION->GetCurPage()).
+			              "exam/new/?"
+			              .$arVariableAliases["PARAM1"]."=#PARAM1#"
+			              .'&'
+			              .$arVariableAliases["PARAM2"]."=#PARAM2#",
+		),
+
+
+3 - формируем ссылку вручную
+$url = $arResult['URL_TEMPLATES']['exampage'];
+$arRepl=['#PARAM1#'=>123,
+         '#PARAM2#'=>456];
+$url=str_replace(array_keys($arRepl),$arRepl,$url);
+в боевом режиме код параметра (PARAM*) брать из arResult['ALIASES']
+
+4 - выводим переменные
+<pre><?var_dump($arResult["VARIABLES"])?></pre>
+
+**********************************************************************************************
+
+
