@@ -13,10 +13,43 @@
 
 `sudo dhclient enp4s0`
 
+#### Звук
+`pacmd list-sinks | grep -e 'name:' -e 'index'`
+
+смотрим айдишник со звездочкой
+
+Набираем pacmd, и табами подбираем команды как ниже
+
+`set-default-source alsa_input.pci-0000_00_14.2.analog-stereo`
+
+`set-default-sink alsa_output.pci-0000_00_14.2.analog-stereo`
+
+`set-sink-mute alsa_output.pci-0000_00_14.2.analog-stereo false`
+
+`set-sink-volume alsa_output.pci-0000_00_14.2.analog-stereo 0x10000`
+
+добавляем их без pacmd в /etc/pulse/default.pa
+
+`mcedit /etc/pulse/default.pa`
+
 #### Время
 `sudo dpkg-reconfigure tzdata`
 
 выбрать Europe/Moscow
+
+#### mc
+`sudo apt install mc`
+
+* запускаем mc от пользователя
+* настраиваем
+* вводим select-editor
+* обязательно жмем "сохранить настройки" - это создаст конфиг
+* выходим из mc
+* вводим select-editor
+
+`sudo -i`
+
+повторяем процедуру от рута
 
 #### Настраиваем пакетный менеджер
 * Выбираем ближайшие зеркала - яндекс и корбина
@@ -42,6 +75,8 @@
 
 `sudo apt install oracle-java8-installer`
 
+`sudo apt-get install oracle-java8-set-default`
+
 `sudo update-java-alternatives -s java-8-oracle`
 
 `java -version`
@@ -60,6 +95,20 @@ jetbrains toolbox устанавливает и обновляет phpstorm
 * активируем
 * настраиваем
 
+`sudo mcedit /etc/sysctl.conf`
+
+fs.inotify.max_user_watches = 524288
+
+`sudo sysctl -p --system`
+
+#### skype & telegramm
+`sudo apt install skypeforlinux`
+
+`sudo apt install `
+
+#### автозапуск
+добавляем в автозапуск skype,telegramm
+
 #### первый бэкап
 `sudo mkdir /root/backup`
 
@@ -67,7 +116,9 @@ jetbrains toolbox устанавливает и обновляет phpstorm
 
 `sudo btrfs subvolume show /`
 
-
 #### обновляемся
 Запускаем полное обновление системы
+
+#### yakuake
+`sudo apt install yakuake`
 
