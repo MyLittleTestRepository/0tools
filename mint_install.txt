@@ -1,0 +1,15 @@
+1 Разметка:
+1G /boot ext2 - нельзя экономить
+33Gb swap - для hibernate
+other / btrfs
+
+cryptfs for /home/tomas
+
+restart
+
+2 Поднимаем сеть:
+ifconfig получаем интерфейс
+sudo dhclient интерфейс - поднимает сеть
+
+3 Время
+sudo dpkg-reconfigure tzdata
