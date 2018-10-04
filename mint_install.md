@@ -13,6 +13,11 @@
 
 `sudo dhclient enp4s0`
 
+#### locale
+sudo locale-gen ru_RU.UTF-8
+sudo update-locale LANG=ru_RU.UTF-8
+Перелогинься
+
 #### Звук
 `pacmd list-sinks | grep -e 'name:' -e 'index'`
 
@@ -197,9 +202,22 @@ sudo service apache2 restart
 
 
 sudo add-apt-repository ppa:ondrej/php
-sudo apt install php7.1
+sudo apt install php7.1 php7.1-xdebug php7.1-pdo-mysql
 /etc/php/7.1/apache2/php.ini
 short_open_tag = On
+error_reporting = E_ALL
+display_errors = On
+display_startup_errors = On
+track_errors = On
+error_prepend_string = "<pre><span style='color: #ff0000'>"
+error_append_string = "</span></pre>"
+
+/etc/php/7.1/mods-available/xdebug.ini
+xdebug.remote_enable = 1
+xdebug.remote_connect_back = 1
+xdebug.remote_port = 9000
+xdebug.max_nesting_level = 512
+xdebug.file_link_format = phpstorm://open?%f:%l
 
 sudo cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/bitr.ix.conf
 
@@ -208,7 +226,7 @@ sudo cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-availab
 
 #### Настройка апача
 sudo apt install libapache2-mpm-itk
-sudo a2enmod mpm-itk
+sudo a2enmod mpm_itk
 
 /etc/apache2/conf-available/tomas.conf
 ServerName local.host
@@ -227,8 +245,11 @@ ServerName local.host
         DocumentRoot /home/tomas/PhpstormProjects/bitr.ix
 </VirtualHost>
 
+sudo a2enmod rewrite
+sudo service apache2 restart
 
-
+sudo apt install php7.2-pdo-mysql
+sudo service apache2 restart
 
 План:
 swapspace
@@ -236,3 +257,9 @@ zswap
 readahead
 preload
 
+sudo btrfs subvolume snapshot -r / /root/backup/`date +%d%m%y%H%M%S`
+
+Боевой:
+пользователь www с доступом на чтение к сайту - веб-сервер, в основном читает, пишет только в несколько директорий
+пользователь git с доступом на запись контентной части сайта - для безопасного внедрения правок, может читать весь сайт, но не может перезаписывать настройки
+пользователь web-admin с полным доступом к сайту - для настройки и поддержки сайта
