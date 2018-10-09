@@ -97,3 +97,8 @@
 ##### Индексы
 
 [теория](https://ruhighload.com/Индексы+в+mysql)
+
+
+##### Отношения
+
+[теория](http://jtest.ru/bazyi-dannyix/sql-dlya-nachinayushhix-chast-3.html)
