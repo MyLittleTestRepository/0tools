@@ -144,7 +144,10 @@ fs.inotify.max_user_watches = 524288
 
 `iface enp4s0 inet dhcp`
 
+лучше такой [вариант](https://askubuntu.com/questions/1084415/ubuntu-18-04-ethernet-not-configuring-automatically/1084423)
+комментируем все #iface enp4s0 *, и network manager сам все поднимает
 
+ ---
 
 
 
