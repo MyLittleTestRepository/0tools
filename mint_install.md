@@ -307,9 +307,9 @@ sudo btrfs subvolume snapshot -r / /root/backup/`date +%d%m%y%H%M%S`
 
 заменяем индекс ссылкой
 
-`rm -r /home/tomas/.PhpStorm2018.2/system/index`
+`rm -r /home/tomas/.PhpStorm2018.3/system/index`
 
-`ln -s /var/ramdisks/phpstorm/index /home/tomas/.PhpStorm2018.2/system/index`
+`ln -s /var/ramdisks/phpstorm/index /home/tomas/.PhpStorm2018.3/system/index`
 
 пересоздаем индекс, запустив шторм
 
@@ -333,7 +333,7 @@ sudo btrfs subvolume snapshot -r / /root/backup/`date +%d%m%y%H%M%S`
     Type=oneshot
     RemainAfterExit=true
     StandardOutput=journal
-    ExecStart=/usr/bin/rsync --quiet --recursive --times /home/tomas/.ramdisks/index/ /var/ramdisks/phpstorm/index/
+    ExecStart=sleep 120s && /usr/bin/rsync --quiet --recursive --times /home/tomas/.ramdisks/index/ /var/ramdisks/phpstorm/index/
     ExecStop=/usr/bin/rsync --quiet --recursive --times /var/ramdisks/phpstorm/index/ /home/tomas/.ramdisks/index/
     [Install]
     WantedBy=default.target
@@ -356,6 +356,18 @@ sudo btrfs subvolume snapshot -r / /root/backup/`date +%d%m%y%H%M%S`
 
 ---
 
+
+При проблемах с сетью убедиться, что в /etc/network/interface:
+iface enp4s0 inet dhcp
+enp4s0 auto
+Потестить dhcp:
+sudo service networking restart
+sudo dhclient -v -r enp4s0
+ifconfig
+systemctl status networking
+И проверить DNS, по-дефолту ломится на гуглоднс почему-то
+
+---
 
 
 
