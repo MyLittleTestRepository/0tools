@@ -390,9 +390,22 @@ sudo dhclient -v -r enp4s0
 ping 8.8.8.8
 ping google.com
 ---
-
-
-
+btrfs restore:
+суть - поменять местами рабочий и резервный снимки и перезагрузиться
+Снимка два - корень и домашняя папка. Обычно достаточно поменять корень
+Для этого нужно примонтировать устройство в папку, например mount /dev/sdb4 /mnt/tmp
+Либо воспользоваться уже смонтированной папкой:
+ls /mnt/timeshift/backup/
+@ - рабочий корень
+@home - домашняя папка
+Список доступных снимков:
+ls /mnt/timeshift/backup/timeshift-btrfs/snapshots
+Замена:
+cd /mnt/timeshift/backup/
+mv @ @_root
+mv timeshift-btrfs/snapshots/***/@ @
+shutdown -r now
+---
 
 
 
