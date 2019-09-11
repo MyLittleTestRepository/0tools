@@ -41,6 +41,12 @@ set-sink-port alsa_output.pci-0000_00_14.2.analog-stereo analog-output-headphone
 set-sink-mute alsa_output.pci-0000_00_14.2.analog-stereo false
 set-sink-volume alsa_output.pci-0000_00_14.2.analog-stereo 0x10000
 
+Или `pactl list cards`
+Смотрим имя профиля и карты, в которые входит желаемый выход
+И делаем `pacmd set-card-profile alsa_card.pci-0000_00_14.2 output:analog-stereo+input:analog-stereo`
+Если играет - добавляем текст после pacmd в default.pa
+
+
 #### Время
 `sudo dpkg-reconfigure tzdata`
 
@@ -367,6 +373,22 @@ ifconfig
 systemctl status networking
 И проверить DNS, по-дефолту ломится на гуглоднс почему-то
 
+100% рабочая конфигурация:
+/etc/network/interface:
+auto lo
+iface lo inet loopback
+auto enp4s0
+iface enp4s0 inet dhcp
+/etc/resolv.conf:
+nameserver ::1
+nameserver 127.0.0.1
+nameserver 192.168.0.1
+nameserver 8.8.8.8
+тест:
+sudo service networking restart
+sudo dhclient -v -r enp4s0
+ping 8.8.8.8
+ping google.com
 ---
 
 
